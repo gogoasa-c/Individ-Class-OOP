@@ -314,7 +314,7 @@ void Individ::SetAge() {
 }
 
 void Individ::SetEnergy() {
-	std::cout << "Set energy for individual";
+	std::cout << "Set energy for individual: ";
 	std::cin >> energy;
 }
 
