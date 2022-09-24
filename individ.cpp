@@ -1,5 +1,4 @@
-﻿
-#include "individ.h"
+﻿#include "individ.h"
 
 class Individ {
 
@@ -59,11 +58,7 @@ public:
 
 	void UpdatePopulation();
 	
-	void UpdatePopulationNoCheck(); //updates population without checking if the game is over, used for multiple updates in one go
-
-	char GetFirstIndType() {
-		return pop[0].type;
-	}
+	void UpdatePopulationMulti(int times); 
 
 	bool CheckIfNoIndividual(int pos);
 
@@ -74,21 +69,7 @@ public:
 	void ClearPopulation();
 };
 
-void Population::UpdatePopulationNoCheck() {
-	int posToUpdate[30] = { 0 };
-	for (int i = 0; i < 30; i++) {
-		if (pop[i].type != '-') {
-			++posToUpdate[i];
-		}
-	}
-	for (int i = 0; i < 30; i++) {
-		if (posToUpdate[i] != 0) {
-			if (pop[i].IsAlive()) {
-				pop[i].Update();
-			}
-		}
-	}
-}
+
 
 void Population::PrintPopulation() {
 	for (int i = 0; i < 30; i++) {
@@ -446,18 +427,8 @@ void PlayMenu(Population p) {
 				if (times > 100) {
 					throw std::string("Too many updates!");
 				}
-				for(int i = 0; i<times; i++){
-					p.UpdatePopulationNoCheck();
-				}
-				if (p.CheckIfSameType()) {
-					std::cout << "\t Game is over!\n";
-					printf_s("\tThe %c's have won!\n", p.GetFirstIndType());
-					p.ClearPopulation();
-					menu();
-				}
-				else{
-					p.PrintPopulation();
-				}
+				p.UpdatePopulationMulti(times);
+				
 				break;
 			case 4:
 				return;
@@ -479,6 +450,35 @@ void menu() {
 		return;
 	}
 	PlayMenu(p);
+}
+
+int posToUpdate[30] = { 0 };
+
+void Population::UpdatePopulationMulti(int times) {
+	for (int i = 0; i < times; i++) {		
+		for (int i = 0; i < 30; i++) {
+			if (pop[i].type != '-') {
+				++posToUpdate[i];
+			}
+		}
+		for (int i = 0; i < 30; i++) {
+			if (posToUpdate[i] != 0) {
+				--posToUpdate[i];
+				if (pop[i].IsAlive()) {
+					pop[i].Update();
+				}
+			}
+		}
+	}
+	if (this->CheckIfSameType()) {
+		std::cout << "\t Game is over!\n";
+		printf_s("\tThe %c's have won!\n", pop[0].type);
+		this->ClearPopulation();
+		menu();
+	}
+	else {
+		this->PrintPopulation();
+	}
 }
 
 void Population::UpdatePopulation() {
@@ -507,6 +507,5 @@ void Population::UpdatePopulation() {
 int main()
 {
 	menu();
-
 	return 0;
 }
