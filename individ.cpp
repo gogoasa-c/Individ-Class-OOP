@@ -37,13 +37,14 @@ public:
 	void SetEnergy();
 	void SetAlive();
 
-	bool CheckForEnd();
+	
 
 	friend class Population;
 
 	friend std::ostream& operator <<(std::ostream& out, const Individ& ind);
 	friend std::istream& operator >>(std::istream& in, Individ& ind);
 	Individ& operator =(const Individ& assign);
+	Individ& operator +(const Individ& toAdd);
 };
 
 class Population {
@@ -63,6 +64,8 @@ public:
 	bool CheckIfFull();
 
 	bool CheckIfSameType();
+
+	void ClearPopulation();
 };
 
 void Population::PrintPopulation() {
@@ -71,6 +74,15 @@ void Population::PrintPopulation() {
 			std::cout << pop[i];
 		}
 	}
+}
+
+void Population::ClearPopulation() {
+	for (int i = 0; i < 30; i++) {
+		pop[i].type = '-';
+		pop[i].age = -1;
+		pop[i].alive = false;
+		pop[i].energy = -1;
+ 	}
 }
 
 bool Population::CheckIfNoIndividual(int pos) {
@@ -117,6 +129,7 @@ std::istream& operator >>(std::istream& in, Individ& ind) {
 	return in;
 }
 
+
 Individ& Individ::operator =(const Individ& assign) {
 	type = assign.type;
 	age = assign.age;
@@ -124,6 +137,25 @@ Individ& Individ::operator =(const Individ& assign) {
 	energy = assign.energy;
 	i = assign.i;
 	return *this;
+}
+Individ& Individ::operator +(const Individ& toAdd) {
+	Individ newIndivid;
+	if (toAdd.type == type) {
+		newIndivid.type = type;
+	}
+	else {
+		if (rand() % 2 == 1) {
+			newIndivid.type = '+';
+		}
+		else {
+			newIndivid.type = '0';
+		}
+	}
+	newIndivid.age = age + toAdd.age;
+	newIndivid.alive = 1;
+	newIndivid.energy = energy + toAdd.energy;
+	newIndivid.i = i;
+	return newIndivid;
 }
 
 void Individ::PrintInd() {
@@ -137,21 +169,7 @@ void Individ::Update() {
 	this->Age();
 }
 
-void Population::UpdatePopulation() {
-	int posToUpdate[30] = { 0 };
-	for (int i = 0; i < 30; i++) {
-		if (pop[i].type != '-') {
-			posToUpdate[i] = 1;
-		}
-	}
-	for (int i = 0; i < 30; i++) {
-		if (posToUpdate[i]) {
-			if(pop[i].IsAlive()){
-				pop[i].Update();
-			}
-		}
-	}
-}
+
 
 //done
 void Individ::Age() {//done
@@ -330,65 +348,114 @@ void Individ::SetAlive() {
 	}
 }
 
-
-
-
-void menu() {
-	Population p;
-	
-	
-	p.PrintPopulation();
-	int first = 1;
+int TitleScreen() {
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	std::cout << "\t  * * * * *\n";
+	std::cout << "\t* Welcome to *\n";
+	SetConsoleTextAttribute(hConsole, 3);
+	std::cout << "\t  P";
+	SetConsoleTextAttribute(hConsole, 4);
+	std::cout << "O";
+	SetConsoleTextAttribute(hConsole, 5);
+	std::cout << "P";
+	SetConsoleTextAttribute(hConsole, 6);
+	std::cout << "U";
+	SetConsoleTextAttribute(hConsole, 7);
+	std::cout << "L";
+	SetConsoleTextAttribute(hConsole, 8);
+	std::cout << "A";
+	SetConsoleTextAttribute(hConsole, 9);
+	std::cout << "T";
+	SetConsoleTextAttribute(hConsole, 10);
+	std::cout << "I";
+	SetConsoleTextAttribute(hConsole, 11);
+	std::cout << "O";
+	SetConsoleTextAttribute(hConsole, 12);
+	std::cout << "N\n";
+	SetConsoleTextAttribute(hConsole, 7);
 	std::cout << "1. Play\n" << "2. Quit\n" << "Select option: ";
 	int choice;
 	std::cin >> choice;
-	if (choice == 2) {
-		return;
-	}
+	return choice;
+}
+
+void PlayMenu(Population p) {
+	int first = 1;
 	while (true) {
 		int opt;
 		std::cout << "1. Add new individual\n" << "2. Update population\n" << "3. Quit\n";
 		std::cin >> opt;
 		try {
-			switch(opt){
-				case 1:
-					try
+			switch (opt) {
+			case 1:
+				try
+				{
+					Individ aux;
+					std::cin >> aux;
+					if (aux.GetPos() < 0 || aux.GetPos() >= 30 || (aux.GetType() != '+' && aux.GetType() != '0')) {
+						throw std::string("Invalid position or type!\n");
+					}
+					if (!p.CheckIfNoIndividual(aux.GetPos())) {
+						throw std::string("Position occupied already!\n");
+					}
+					p.ReplaceIndividual(aux.GetPos(), aux);
+					if (!first)
 					{
-						Individ aux;
-						std::cin >> aux;
-						if (aux.GetPos() < 0 || aux.GetPos() >= 30 || (aux.GetType() != '+' && aux.GetType() != '0')) {
-							throw std::string("Invalid position or type!\n");
-						}
-						if (!p.CheckIfNoIndividual(aux.GetPos())) {
-							throw std::string("Position occupied already!\n");
-						}
-						p.ReplaceIndividual(aux.GetPos(), aux);
-						if(!first)
-						{
-							p.UpdatePopulation();
-						}
-						p.PrintPopulation();
-						first = 0;
+						p.UpdatePopulation();
 					}
-					catch (const std::string exc) {
-						std::cout << exc;
-					}
-					break;
-				case 2:
-					p.UpdatePopulation();
 					p.PrintPopulation();
-					break;
-				case 3:
-					return;
-				default:
-					throw(std::string("Invalid option!\n"));
+					first = 0;
+				}
+				catch (const std::string exc) {
+					std::cout << exc;
+				}
+				break;
+			case 2:
+				p.UpdatePopulation();
+				p.PrintPopulation();
+				break;
+			case 3:
+				return;
+			default:
+				throw(std::string("Invalid option!\n"));
 			}
 		}
-		catch(const std::string exc){
+		catch (const std::string exc) {
 			std::cout << exc << "\n";
 		}
 	}
+}
 
+void menu() {
+	Population p;
+	int choice = TitleScreen();
+	
+	if (choice == 2) {
+		return;
+	}
+	PlayMenu(p);
+}
+
+void Population::UpdatePopulation() {
+	int posToUpdate[30] = { 0 };
+	for (int i = 0; i < 30; i++) {
+		if (pop[i].type != '-') {
+			posToUpdate[i] = 1;
+		}
+	}
+	for (int i = 0; i < 30; i++) {
+		if (posToUpdate[i]) {
+			if (pop[i].IsAlive()) {
+				pop[i].Update();
+			}
+		}
+	}
+	if (this->CheckIfSameType()) {
+		std::cout << "\t Game is over!\n";
+		printf_s("\tThe %c's have won!\n", pop[0].type);
+		this->ClearPopulation();
+		menu();
+	}
 }
 
 int main()
