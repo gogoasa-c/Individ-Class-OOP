@@ -8,8 +8,8 @@ class Individ {
 	char type;//tip individ: 0 sau +
 	int age; //de la 0 pana la 80
 	double energy;
-	bool alive;	
-	
+	bool alive;
+
 	void Feed();
 	void Multiply();
 	void Attack();
@@ -19,7 +19,7 @@ class Individ {
 	void Child(Individ ind, int newPos);
 
 public:
-	Individ(): age(-1), energy(-1), alive(false), i(-1), type('-') {} //constructor neparametrizat
+	Individ() : age(-1), energy(-1), alive(false), i(-1), type('-') {} //constructor neparametrizat
 	Individ(int newPos, char newType) : age(0), energy(10), alive(true), i(newPos), type(newType) {} //constructor parametrizat
 	Individ(const Individ& newInd) : i(newInd.i), type(newInd.type), age(newInd.age), energy(newInd.energy), alive(newInd.alive) {} //constructor copiere
 	~Individ() {}
@@ -37,7 +37,7 @@ public:
 	void SetEnergy();
 	void SetAlive();
 
-	
+
 
 	friend class Population;
 
@@ -58,6 +58,12 @@ public:
 	void PrintPopulation();
 
 	void UpdatePopulation();
+	
+	void UpdatePopulationNoCheck(); //updates population without checking if the game is over, used for multiple updates in one go
+
+	char GetFirstIndType() {
+		return pop[0].type;
+	}
 
 	bool CheckIfNoIndividual(int pos);
 
@@ -67,6 +73,22 @@ public:
 
 	void ClearPopulation();
 };
+
+void Population::UpdatePopulationNoCheck() {
+	int posToUpdate[30] = { 0 };
+	for (int i = 0; i < 30; i++) {
+		if (pop[i].type != '-') {
+			++posToUpdate[i];
+		}
+	}
+	for (int i = 0; i < 30; i++) {
+		if (posToUpdate[i] != 0) {
+			if (pop[i].IsAlive()) {
+				pop[i].Update();
+			}
+		}
+	}
+}
 
 void Population::PrintPopulation() {
 	for (int i = 0; i < 30; i++) {
@@ -82,7 +104,7 @@ void Population::ClearPopulation() {
 		pop[i].age = -1;
 		pop[i].alive = false;
 		pop[i].energy = -1;
- 	}
+	}
 }
 
 bool Population::CheckIfNoIndividual(int pos) {
@@ -109,11 +131,11 @@ bool Population::CheckIfSameType() {
 		}
 	}
 	return true;
-	
+
 }
 
 std::ostream& operator <<(std::ostream& out, const Individ& ind) {
-	out << "Individual " << ind.i+1 << " of type " << ind.type << " has an age of " << ind.age << " and " << ind.energy << " energy.\n";
+	out << "Individual " << ind.i + 1 << " of type " << ind.type << " has an age of " << ind.age << " and " << ind.energy << " energy.\n";
 	return out;
 }
 std::istream& operator >>(std::istream& in, Individ& ind) {
@@ -178,7 +200,7 @@ void Individ::Age() {//done
 	if (energy <= 0) {
 		this->Die();
 	}
-} 
+}
 
 //done
 void Individ::Die() {
@@ -192,7 +214,7 @@ void Individ::Die() {
 //done
 void Individ::Feed() {
 	energy += rand() % 10 + 1; //creste energia cu o valoare intre 1 si 10
-} 
+}
 
 void Individ::Child(Individ ind, int newPos) {
 	this->age = 0;
@@ -234,7 +256,7 @@ void Individ::Attack() {
 		if ((((*(this + 1)).type != '-' && ((*(this)).type != '-')) && ((*(this + 1)).type != (*(this)).GetType())))
 		{ // if they are types that are not '-' (dead) AND they're different
 			if ((*(this)).energy > (*(this + 1)).energy) {
-				(*(this)).energy-=(*(this + 1)).energy;
+				(*(this)).energy -= (*(this + 1)).energy;
 			}
 			else if ((*(this)).energy == (*(this + 1)).energy) {
 				this->Die();
@@ -376,6 +398,9 @@ int TitleScreen() {
 	std::cout << "1. Play\n" << "2. Quit\n" << "Select option: ";
 	int choice;
 	std::cin >> choice;
+	if (choice == 2) {
+		exit;
+	}
 	return choice;
 }
 
@@ -383,7 +408,7 @@ void PlayMenu(Population p) {
 	int first = 1;
 	while (true) {
 		int opt;
-		std::cout << "1. Add new individual\n" << "2. Update population\n" << "3. Quit\n";
+		std::cout << "1. Add new individual\n" << "2. Update population\n" << "3. Update population (multiple times, at most 100)\n" << "4. Quit\n";
 		std::cin >> opt;
 		try {
 			switch (opt) {
@@ -415,6 +440,26 @@ void PlayMenu(Population p) {
 				p.PrintPopulation();
 				break;
 			case 3:
+				int times;
+				std::cout << "How many times to update population?\n";
+				std::cin >> times;
+				if (times > 100) {
+					throw std::string("Too many updates!");
+				}
+				for(int i = 0; i<times; i++){
+					p.UpdatePopulationNoCheck();
+				}
+				if (p.CheckIfSameType()) {
+					std::cout << "\t Game is over!\n";
+					printf_s("\tThe %c's have won!\n", p.GetFirstIndType());
+					p.ClearPopulation();
+					menu();
+				}
+				else{
+					p.PrintPopulation();
+				}
+				break;
+			case 4:
 				return;
 			default:
 				throw(std::string("Invalid option!\n"));
@@ -429,7 +474,7 @@ void PlayMenu(Population p) {
 void menu() {
 	Population p;
 	int choice = TitleScreen();
-	
+
 	if (choice == 2) {
 		return;
 	}
@@ -440,11 +485,11 @@ void Population::UpdatePopulation() {
 	int posToUpdate[30] = { 0 };
 	for (int i = 0; i < 30; i++) {
 		if (pop[i].type != '-') {
-			posToUpdate[i] = 1;
+			++posToUpdate[i];
 		}
 	}
 	for (int i = 0; i < 30; i++) {
-		if (posToUpdate[i]) {
+		if (posToUpdate[i] != 0) {
 			if (pop[i].IsAlive()) {
 				pop[i].Update();
 			}
@@ -458,9 +503,10 @@ void Population::UpdatePopulation() {
 	}
 }
 
+
 int main()
 {
 	menu();
-	
+
 	return 0;
 }
